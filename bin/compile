@@ -1,9 +1,10 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 set -e
 
 BUILD_DIR=$1
 CACHE_DIR=$2
+ENV_DIR=$3
 
 # config
 VERSION="0.6.1"
@@ -12,6 +13,21 @@ VERSION="0.6.1"
 ARCHIVE_NAME=vault_${VERSION}_linux_amd64
 FILE_NAME=${ARCHIVE_NAME}.zip
 BUILDPACK_VAULT_PACKAGE=https://releases.hashicorp.com/vault/${VERSION}/${FILE_NAME}
+
+# Load Heroku env variables
+export_env_dir() {
+  whitelist_regex=''
+  blacklist_regex='^(PATH|GIT_DIR|CPATH|CPPATH|LD_PRELOAD|LIBRARY_PATH)$'
+  if [ -d "$ENV_DIR" ]; then
+    for e in $(ls $ENV_DIR); do
+      echo "$e" | grep -E "$whitelist_regex" | grep -qvE "$blacklist_regex" &&
+      export "$e=$(cat $ENV_DIR/$e)"
+      :
+    done
+  fi
+}
+
+export_env_dir
 
 mkdir -p $CACHE_DIR
 if ! [ -e $CACHE_DIR/$FILE_NAME ]; then
@@ -29,3 +45,9 @@ echo "-----> exporting PATH"
 PROFILE_PATH="$BUILD_DIR/.profile.d/vault.sh"
 mkdir -p $(dirname $PROFILE_PATH)
 echo 'export PATH="$PATH:$HOME/vendor/vault"' >> $PROFILE_PATH
+
+if [ -f $BUILD_DIR/bin/post_compile ]; then
+  echo "-----> Running post-compile hook"
+  chmod +x $BUILD_DIR/bin/post_compile
+  source $BUILD_DIR/bin/post_compile
+fi
