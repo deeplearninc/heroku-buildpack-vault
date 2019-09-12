@@ -22,7 +22,7 @@ export_env_dir() {
 export_env_dir
 
 # config
-export VAULT_VERSION=${VAULT_VERSION:-0.9.5}
+export VAULT_VERSION=${VAULT_VERSION:-1.2.2}
 
 # Buildpack URL
 ARCHIVE_NAME=vault_${VAULT_VERSION}_linux_amd64
